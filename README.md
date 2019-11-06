@@ -87,7 +87,7 @@ Password:
 101 passwords will be loaded into firefox, do you confirm ?  [y/N]: y
 # Check your mail for new Firefox Sign In mail
 Please click through the confirmation email or type 'resend' to resend the mail or 'c' to continue: c
-100%|██████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████████| 101/101 [00:00<00:00,  1.01it/s]INFO: Passwords saved into: /home/user/Documents/lockwise-password-importer/outfile.csv
+100%|█████████████████████████████████████████████████████████████████████| 101/101 [00:00<00:00,  1.01it/s]
 INFO: Done !
 ``` 
 
