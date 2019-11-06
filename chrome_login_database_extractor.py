@@ -107,7 +107,9 @@ def save_data_to_file(output_file, csv_columns, dict_data):
     logging.info("Passwords saved into: %s" % output_file)
 
 
-@click.command()
+@click.command(
+    help="""Search and extract passwords informations to .csv file from Chrome 'Login Data' sqlite database"""
+)
 @click.option(
     '--output_file',
     '-o',

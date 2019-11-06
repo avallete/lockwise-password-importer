@@ -1,16 +1,3 @@
-#
-#  This is a little script to populate Firefox Sync with
-#  Your passwords from google-chrome and chromium
-#  Use it like so:
-#
-#    $> pip install -r requirements.txt
-#    $> python3 chrome_to_firefox_password_importer.py
-#
-#  It will prompt for your Firefox Account email address and
-#  password, then try to find the local Chrome/Chromium database on your machine
-#  And populate Firefox Lockwise with the extracted passwords from Chrome/Chromium
-#
-
 import base64
 import csv
 import hashlib
@@ -105,35 +92,6 @@ class KeyBundle:
         }
 
 
-def remove_invalid_records(assertion, kB):
-    # Connect to sync.
-    xcs = hexlify(hashlib.sha256(kB).digest()[:16])
-    client = syncclient.client.SyncClient(assertion, xcs)
-    # Fetch /crypto/keys.
-    raw_sync_key = fxa.crypto.derive_key(kB, "oldsync", 64)
-    root_key_bundle = KeyBundle(
-        raw_sync_key[:32],
-        raw_sync_key[32:],
-    )
-    keys_bso = client.get_record("crypto", "keys")
-    keys = root_key_bundle.decrypt_bso(keys_bso)
-    default_key_bundle = KeyBundle(
-        base64.b64decode(keys["default"][0]),
-        base64.b64decode(keys["default"][1]),
-    )
-    passwr = []
-    for er in client.get_records("passwords"):
-        passwr.append(default_key_bundle.decrypt_bso(er))
-    to_remove = [f for f in passwr if
-                 'timeCreated' in f and f['timeCreated'] >= int(time.time() * 1000) - ((3600 * 24) * 1000)]
-    to_keep = [f for f in passwr if
-               'timeCreated' in f and f['timeCreated'] <= int(time.time() * 1000) - ((3600 * 24) * 1000)]
-    print("Will remove %s entries %s remaining" % (len(to_remove), len(to_keep)))
-    if click.confirm("Continue ?"):
-        for record in tqdm(to_remove):
-            client.delete_record("passwords", record['id'])
-
-
 def login(email, password):
     """Use fxa to get the firefox account api
     TODO: Make it work with 2fa
@@ -144,7 +102,8 @@ def login(email, password):
     try:
         status = session.get_email_status()
         while not status["verified"]:
-            ret = click.prompt("Please click through the confirmation email or type 'resend' to resend the mail")
+            ret = click.prompt(
+                "Please click through the confirmation email or type 'resend' to resend the mail or 'c' to continue")
             if ret == "resend":
                 session.resend_email_code()
             status = session.get_email_status()
@@ -208,7 +167,9 @@ def upload_passwords_data(passdata, assertion, kB):
     logging.info("Done!")
 
 
-@click.command()
+@click.command(
+    help="""Get a csvfile containing passwords informations and feed your Firefox Lockwise account with it."""
+)
 @click.option(
     '--email',
     prompt=True,
