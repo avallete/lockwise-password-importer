@@ -88,9 +88,8 @@ def extract_chrome_passwords_data(conn):
     cursor = conn.execute('SELECT * FROM main.logins')
     for row in cursor:
         dict_data.append({
-            "hostname": row['origin_url'],
+            "hostname": row['signon_realm'],  # Use signon_realm as hostname to match with Firefox autofill behavior
             "formSubmitURL": row['action_url'],
-            "httpRealm": row['signon_realm'],
             "usernameField": row['username_element'],
             "passwordField": row['password_element'],
             "username": row['username_value'],
