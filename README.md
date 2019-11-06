@@ -11,6 +11,7 @@ This repo contain some scripts to fill this gap, and especially to migrate from 
 - [Usage](#usage)
 - [Examples](#examples)
 - [FAQ](#faq)
+- [License](#license)
 
 
 ## Requirements:
@@ -112,3 +113,9 @@ With data matching the following schema:
     Required('password'): All(str, Length(min=1)),
 }
 ```
+
+## Special Thank's
+- Thank's to [this gist file](https://gist.github.com/rfk/916d9ca684f862b1c1030c685a5a4d19) who has been base of this script.
+
+## LICENSE
+This project is onto MIT license see [LICENSE](./LICENSE) file.
