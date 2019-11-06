@@ -114,6 +114,15 @@ With data matching the following schema:
 }
 ```
 
+### Why using special command instead of default Chrome one to extract passwords ?
+Because the default chrome password extraction to csv is lacking a lot of informations (like usernameFile, passwordField).
+Who prevent Firefox to properly autofill login pages forms. With my extraction methods, most of the login forms autofill correctly on Firefox after Chrome password importation.
+
+
+### I don't see my imported passwords into my Firefox Account
+You may need to manually run the synchronisation of your account to fetch the new passwords with 'Sync Now'.
+
+
 ## Special Thank's
 - Thank's to [this gist file](https://gist.github.com/rfk/916d9ca684f862b1c1030c685a5a4d19) who has been base of this script.
 
