@@ -21,7 +21,7 @@ from tqdm import tqdm
 from voluptuous import Required, Url, Optional, Any, All, Length
 from voluptuous import Schema
 
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(levelname)s: %(message)s [l.%(lineno)d]', level=logging.INFO)
 CRYPTO_BACKEND = default_backend()
 
 VALID_CSV_PASSWORD_SCHEMA = Schema({

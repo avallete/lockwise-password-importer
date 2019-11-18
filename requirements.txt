@@ -4,3 +4,5 @@ syncclient==0.8.0
 Click==7.0
 tqdm==4.37.0
 voluptuous==0.11.7
+pycryptodome==3.9.3
+secretstorage==3.1.1
