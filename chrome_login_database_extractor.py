@@ -17,7 +17,8 @@ CHROME_DATABASE_DEFAULT_LOCATIONS = {
         "~/Library/Application Support/Google/Chromium/",
     ]
 }
-logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.DEBUG)
+
+logging.basicConfig(format='%(levelname)s: %(message)s [l.%(lineno)d]', level=logging.DEBUG)
 
 
 def check_running_platform():
