@@ -2,6 +2,7 @@ import csv
 import logging
 import os
 import sqlite3
+import subprocess
 import sys
 from importlib import import_module
 from sys import platform
@@ -61,8 +62,45 @@ class LinuxDecrypter:
         return make_printable(decrypted.decode('utf8'))  # make_printable avoid \x00 \x11 and write file as plain/text
 
 
+class DarwinDecrypter:
+    def __init__(self):
+        iterations = 1003
+        salt = b'saltysalt'
+        length = 16
+        my_pass = DarwinDecrypter.get_encryption_password()
+
+        self.kdf = import_module('Crypto.Protocol.KDF')
+        self.aes = import_module('Crypto.Cipher.AES')
+        self.iv = b' ' * 16
+        self.key = self.kdf.PBKDF2(my_pass, salt, length, iterations)
+
+    @staticmethod
+    def get_encryption_password():
+        for browser in ['Chrome', 'Chromium']:
+            proc = subprocess.Popen(
+                "security find-generic-password -wa '%s'" % browser,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True)
+            stdout, _ = proc.communicate()
+            result = stdout.replace(b'\n', b'')
+            if len(result > 0):
+                logging.info("Decryption key found in keychain for browser: %s" % browser)
+                resp = click.confirm("Do you want to use this key to decrypt your passwords ?: ")
+                if resp:
+                    return result
+        raise Exception("Cannot retrieve OSX keychain decryption password")
+
+    def decrypt(self, encrypted_password):
+        password = encrypted_password[3:]  # Skip the v10/v11 password prefix
+        cipher = self.aes.new(self.key, self.aes.MODE_CBC, IV=self.iv)
+        decrypted = cipher.decrypt(password)
+        return make_printable(decrypted.decode('utf8'))
+
+
 CHROME_DATABASE_DECRYPTER = {
-    "linux": LinuxDecrypter
+    "linux": LinuxDecrypter,
+    "darwin": DarwinDecrypter,
 }
 # List of defaults possible paths where Login Data chrome file can be found
 CHROME_DATABASE_DEFAULT_LOCATIONS = {
