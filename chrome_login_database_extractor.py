@@ -2,10 +2,48 @@ import csv
 import logging
 import os
 import sqlite3
+import sys
+from importlib import import_module
 from sys import platform
 
 import click
 
+# build a table mapping all non-printable characters to None
+NOPRINT_TRANS_TABLE = {
+    i: None for i in range(0, sys.maxunicode + 1) if not chr(i).isprintable()
+}
+
+
+def make_printable(s):
+    """Replace non-printable characters in a string."""
+
+    # the translate method on str removes characters
+    # that map to None from the string
+    return s.translate(NOPRINT_TRANS_TABLE)
+
+
+class LinuxDecrypter:
+    def __init__(self):
+        my_pass = 'peanuts'.encode('utf8')  # On linux the key password is peanuts
+        iterations = 1
+        salt = b'saltysalt'
+        length = 16
+
+        self.kdf = import_module('Crypto.Protocol.KDF')
+        self.aes = import_module('Crypto.Cipher.AES')
+        self.key = self.kdf.PBKDF2(my_pass, salt, length, iterations)
+
+    def decrypt(self, encrypted_password):
+        initialization_vector = b' ' * 16
+        password = encrypted_password[3:]  # Skip the v10/v11 password prefix
+        cipher = self.aes.new(self.key, self.aes.MODE_CBC, IV=initialization_vector)
+        decrypted = cipher.decrypt(password)
+        return make_printable(decrypted.decode('utf8'))  # make_printable avoid \x00 \x11 and write file as plain/text
+
+
+CHROME_DATABASE_DECRYPTER = {
+    "linux": LinuxDecrypter
+}
 # List of defaults possible paths where Login Data chrome file can be found
 CHROME_DATABASE_DEFAULT_LOCATIONS = {
     "linux": [
@@ -39,6 +77,11 @@ def get_defaults_paths():
         return CHROME_DATABASE_DEFAULT_LOCATIONS['darwin']
     else:
         return
+
+
+def get_default_decrypter():
+    if platform == "linux" or platform == "linux2":
+        return CHROME_DATABASE_DECRYPTER['linux']
 
 
 def find_chrome_login_data(default_paths):
@@ -87,15 +130,31 @@ def get_chrome_login_database_connection(db_location):
 def extract_chrome_passwords_data(conn):
     dict_data = []
     cursor = conn.execute('SELECT * FROM main.logins')
+    pass_decrypter = get_default_decrypter()()
     for row in cursor:
-        dict_data.append({
-            "hostname": row['signon_realm'],  # Use signon_realm as hostname to match with Firefox autofill behavior
-            "formSubmitURL": row['action_url'],
-            "usernameField": row['username_element'],
-            "passwordField": row['password_element'],
-            "username": row['username_value'],
-            "password": row['password_value'].decode('utf-8'),
-        })
+        try:
+            if row['password_value'][:3] == b'v10' or row['password_value'][:3] == b'v11':  # Password is encrypted
+                dict_data.append({
+                    "hostname": row['signon_realm'],
+                    # Use signon_realm as hostname to match with Firefox autofill behavior
+                    "formSubmitURL": row['action_url'],
+                    "usernameField": row['username_element'],
+                    "passwordField": row['password_element'],
+                    "username": row['username_value'],
+                    "password": pass_decrypter.decrypt(row['password_value']),
+                })
+            else:  # Password isn't encrypted
+                dict_data.append({
+                    "hostname": row['signon_realm'],
+                    # Use signon_realm as hostname to match with Firefox autofill behavior
+                    "formSubmitURL": row['action_url'],
+                    "usernameField": row['username_element'],
+                    "passwordField": row['password_element'],
+                    "username": row['username_value'],
+                    "password": row['password_value'].decode('utf-8'),
+                })
+        except Exception as e:
+            logging.error("with data for [%s]: %s" % (row['signon_realm'], e))
     return dict_data
 
 
