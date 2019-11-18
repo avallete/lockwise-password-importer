@@ -24,7 +24,7 @@ def make_printable(s):
 
 class LinuxDecrypter:
     def __init__(self):
-        my_pass = 'peanuts'.encode('utf8')  # On linux the key password is peanuts
+        my_pass = LinuxDecrypter.get_encryption_password()  # get the key password for system
         iterations = 1
         salt = b'saltysalt'
         length = 16
@@ -33,6 +33,26 @@ class LinuxDecrypter:
         self.aes = import_module('Crypto.Cipher.AES')
         self.iv = b' ' * 16
         self.key = self.kdf.PBKDF2(my_pass, salt, length, iterations)
+
+    @staticmethod
+    def get_encryption_password():
+        try:
+            secretstorage = import_module('secretstorage')
+            bus = secretstorage.dbus_init()
+            collection = secretstorage.get_default_collection(bus)
+            if collection.is_locked():
+                collection.unlock()
+            for item in collection.get_all_items():
+                if item.get_label() in ['Chromium Safe Storage', 'Chrome Safe Storage']:
+                    logging.info("Decryption key found in secretstorage under: %s" % item.get_label())
+                    resp = click.confirm("Do you want to use this key to decrypt your passwords ?: ")
+                    if resp:
+                        return item.get_secret()
+            raise Exception('No chrome data found into secretstorage')
+        except Exception as e:
+            logging.error("while trying to retrieving decryption key from secretstorage: %s" % e)
+            logging.debug("Cannot retrieve decryption key from secretstorage, use default linux 'peanuts' key")
+            return 'peanuts'.encode('utf-8')
 
     def decrypt(self, encrypted_password):
         password = encrypted_password[3:]  # Skip the v10/v11 password prefix
