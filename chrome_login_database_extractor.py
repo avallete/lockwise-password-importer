@@ -31,12 +31,12 @@ class LinuxDecrypter:
 
         self.kdf = import_module('Crypto.Protocol.KDF')
         self.aes = import_module('Crypto.Cipher.AES')
+        self.iv = b' ' * 16
         self.key = self.kdf.PBKDF2(my_pass, salt, length, iterations)
 
     def decrypt(self, encrypted_password):
-        initialization_vector = b' ' * 16
         password = encrypted_password[3:]  # Skip the v10/v11 password prefix
-        cipher = self.aes.new(self.key, self.aes.MODE_CBC, IV=initialization_vector)
+        cipher = self.aes.new(self.key, self.aes.MODE_CBC, IV=self.iv)
         decrypted = cipher.decrypt(password)
         return make_printable(decrypted.decode('utf8'))  # make_printable avoid \x00 \x11 and write file as plain/text
 
