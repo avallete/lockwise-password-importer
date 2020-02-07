@@ -70,6 +70,22 @@ Options:
 
 ```
 
+##### lastpass_extractor:
+```bash
+Usage: lastpass_extractor.py [OPTIONS]
+
+  Convert data from lastpass extraction file to lockwise_importer compatible
+  file
+
+Options:
+  -o, --output_file FILENAME      File where the extracted password will be
+                                  saved as .csv format
+  -i, --lastpass-export-file FILENAME
+                                  Path of the lastpass password extraction in
+                                  .csv format to convert.  [required]
+  --help                          Show this message and exit.
+```
+
 ## Examples:
 
 ### Chrome to Firefox migration example:
@@ -88,6 +104,24 @@ Password:
 # Check your mail for new Firefox Sign In mail
 Please click through the confirmation email or type 'resend' to resend the mail or 'c' to continue: c
 100%|█████████████████████████████████████████████████████████████████████| 101/101 [00:00<00:00,  1.01it/s]
+INFO: Done !
+```
+
+### Lastpass to Firefox migration example:
+
+```bash
+# You must first extract your data in .csv format from Lastpass using 'export' feature from Lastpass.
+$ python3 lastpass_extractor.py -o ./outfile.csv -i ~/myLastpassPasswords.csv
+INFO: 3 passwords found
+INFO: Passwords saved into: /home/user/Documents/lockwise-password-importer/outfile.csv
+$ python3 lockwise_password_importer.py ./outfile.csv
+Email: useraccount@gmail.com
+Password:
+... # Some warnings may appear if you have some incompatibles passwords for Firefox (missing password, invalid hostname url...) 
+3 passwords will be loaded into firefox, do you confirm ?  [y/N]: y
+# Check your mail for new Firefox Sign In mail
+Please click through the confirmation email or type 'resend' to resend the mail or 'c' to continue: c
+100%|█████████████████████████████████████████████████████████████████████| 3/3 [00:00<00:00,  1.01it/s]
 INFO: Done !
 ``` 
 

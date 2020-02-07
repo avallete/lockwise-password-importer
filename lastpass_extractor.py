@@ -42,13 +42,14 @@ def extract_lastpass_passwords_data(csv_filepath):
     '--lastpass-export-file',
     '-i',
     type=click.File('r'),
-    help="""Path of the lastpass password extraction in .cvs format to convert.""",
+    help="""Path of the lastpass password extraction in .csv format to convert.""",
     required=True,
 )
 def lastpass_extractor(output_file, lastpass_export_file):
     try:
         check_running_platform()
         data = extract_lastpass_passwords_data(lastpass_export_file.name)
+        logging.info("%s passwords found" % len(data))
         if len(data) > 0:
             save_data_to_file(os.path.realpath(
                 os.path.expanduser(output_file.name)),
