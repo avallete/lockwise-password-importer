@@ -5,23 +5,24 @@ import hmac
 import json
 import logging
 import os
+import time
 import uuid
 from binascii import hexlify
 
 import click
 import fxa.core
 import fxa.crypto
-import syncclient.client
-import time
 import voluptuous
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from syncclient.client import SyncClient
 from tqdm import tqdm
 from voluptuous import Required, Url, Optional, Any, All, Length
 from voluptuous import Schema
 
-logging.basicConfig(format='%(levelname)s: %(message)s [l.%(lineno)d]', level=logging.INFO)
+logging_level = logging.DEBUG if bool(os.getenv('DEBUG', False)) is True else logging.INFO
+logging.basicConfig(format='%(levelname)s: %(message)s [l.%(lineno)d]', level=logging_level)
 CRYPTO_BACKEND = default_backend()
 
 VALID_CSV_PASSWORD_SCHEMA = Schema({
@@ -98,7 +99,9 @@ def login(email, password):
     """
     client = fxa.core.Client("https://api.accounts.firefox.com")
     logging.debug("Signing in as %s ..." % email)
-    session = client.login(email, password, keys=True)
+    client.send_unblock_code(email)
+    unblock_code = click.prompt("An unblock code has been sent to your email, please provide it to login")
+    session = client.login(email, password, keys=True, unblock_code=unblock_code)
     try:
         status = session.get_email_status()
         while not status["verified"]:
@@ -123,7 +126,7 @@ def password_file_format(filepath):
             try:
                 VALID_CSV_PASSWORD_SCHEMA(row)
                 data = dict(row)
-                data['id'] = "{%s}" % (uuid.uuid4(),)
+                data['id'] = "%s" % uuid.uuid4()
                 data['timeCreated'] = now
                 data['timePasswordChanged'] = now
                 # Remove trailing / from url's since it cause troubles with autofill form if remaining
@@ -146,7 +149,7 @@ def upload_passwords_data(passdata, assertion, kB):
     """
     # Connect to sync.
     xcs = hexlify(hashlib.sha256(kB).digest()[:16])
-    client = syncclient.client.SyncClient(assertion, xcs)
+    client = SyncClient(assertion, xcs)
     # Fetch /crypto/keys.
     raw_sync_key = fxa.crypto.derive_key(kB, "oldsync", 64)
     root_key_bundle = KeyBundle(
