@@ -1,3 +1,5 @@
+# /!\ DEPRECATED NO LONGER USEFUL IN FF 80 SEE -> [THAT](https://discourse.mozilla.org/t/importing-credentials-from-other-sources/30045/43?u=avallete) /!\
+
 # Lockwise-password-importer
 
 Actually, with Firefox V70.0 and greater, there is no easy way to import your password from existing password manager or other browser.
